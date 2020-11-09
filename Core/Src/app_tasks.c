@@ -8,43 +8,47 @@
 #include "cmsis_os.h"
 #include "app_tasks.h"
 #include "message_buffer.h"
-
-
+#include <string.h>
+#include "queue.h"
 
 
 
 /******************************************* UART RX **************************************************/
 
-static uint8_t        uartRxStorageBuffer[UART_INPUT_BUFFER_SIZE + 1];			// Message buffer for UART ISR
-StaticMessageBuffer_t uartRxMessageBufferStruct;
-MessageBufferHandle_t uartRxMessageBuffer;
+static uint8_t               uartRxStorageBuffer[UART_INPUT_BUFFER_SIZE + 1];			// Message buffer for UART ISR
+static StaticMessageBuffer_t uartRxMessageBufferStruct;
+static MessageBufferHandle_t uartRxMessageBuffer;
+
+
 
 // Function that will be called with each UART byte received
 // After turning on or after a correct message (one that fits in the buffer),
 // the function will store each character received. When a \n is received,
 // it will insert the filled buffer in the msg stream to the processing task.
-// If buffer is full, it will instead wait for a \n to start filling it again.
+// If the buffer is full, it will instead wait for a \n to restart again.
 void procUartRxISR(uint8_t rcvdChar)
 {
-	static char     buffer[UART_INPUT_BUFFER_SIZE];
+	static char     buffer[UART_INPUT_BUFFER_SIZE] = {0};
 	static uint32_t nBuf = 0;
 	size_t          xBytesSent;
 	BaseType_t      xHigherPriorityTaskWoken = pdFALSE;
 
-	// If char is \n and buffer was full, notify user error and reset buffer
-	// If char is \n and buffer is not full nor empty, add to msg queue
-	// If char is not \n nor \r and buffer is not full, add to buffer
 	if(rcvdChar == '\n' && nBuf == UART_INPUT_BUFFER_SIZE)
 	{
-		// TODO insert in TX queue error about incorrect length
+		uartPrintFromISR("E: Received string is too long");
 		nBuf = 0;
 	}
 	else if(rcvdChar == '\n' && nBuf != 0)
 	{
-		xBytesSent = xMessageBufferSendFromISR(uartRxMessageBuffer, (void*)buffer, nBuf, &xHigherPriorityTaskWoken);
+		uartPrintFromISR("D: Added string in ISR to msg buffer, received from UART:");
+		uartPrintFromISR(buffer);
+
+		xBytesSent = xMessageBufferSendFromISR(uartRxMessageBuffer, buffer, nBuf, &xHigherPriorityTaskWoken);
 		if(xBytesSent != nBuf)
-			while(1);				// TODO stream buffer is not big enough
+			uartPrintFromISR("E: UART RX ISR message buffer overflowed");
+
 		//taskYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+		memset(buffer, 0, sizeof(buffer));	// TODO replace with a better way to uartPrint with null terminators
 		nBuf = 0;
 	}
 	else if(nBuf != UART_INPUT_BUFFER_SIZE)
@@ -52,25 +56,13 @@ void procUartRxISR(uint8_t rcvdChar)
 		if(rcvdChar != '\r')
 			buffer[nBuf++] = rcvdChar;
 	}
-
-
-
-
-
-
-	// Wait for TXE flag to be raised
-	while (!LL_LPUART_IsActiveFlag_TXE(LPUART1))
-	{
-	}
-
-	// Write character in Transmit Data register.
-	// TXE flag is cleared by writing data in TDR register
-	LL_LPUART_TransmitData8(LPUART1, rcvdChar);
 }
 
 
 void processUartRx()
 {
+	char uartRxTaskBuffer[UART_INPUT_BUFFER_SIZE] = {0};
+
 	// Enable RXNE and Error interrupts
 	LL_LPUART_EnableIT_RXNE(LPUART1);
 	LL_LPUART_EnableIT_ERROR(LPUART1);
@@ -80,20 +72,58 @@ void processUartRx()
 
 	for(;;)
 	{
-		osDelay(50);
+		if(xMessageBufferReceive(uartRxMessageBuffer, uartRxTaskBuffer, UART_INPUT_BUFFER_SIZE, portMAX_DELAY) != 0)
+		{
+			uartPrint("D: Received from UART RX message buffer:");
+			uartPrint(uartRxTaskBuffer);
+			memset(uartRxTaskBuffer, 0, sizeof(uartRxTaskBuffer));	// TODO replace with a better way to uartPrint with null terminators
+		}
 	}
 }
 /***************************************** END UART RX ************************************************/
 
+
+
 /******************************************* UART TX **************************************************/
 
+static osMessageQueueId_t m_uartTxQueueHandle;
 
-void processUartTx()
+BaseType_t uartPrint(char* string)
 {
-	/* Infinite loop */
+	char printBuffer[UART_STRING_MAX_LENGTH];
+
+	strncpy(printBuffer, string, UART_STRING_MAX_LENGTH);
+	return xQueueSendToBack(m_uartTxQueueHandle, printBuffer, 0);
+}
+
+// TODO fix case when passed string is smaller than max length and does not have a null terminator
+BaseType_t uartPrintFromISR(char* string)
+{
+	char printBuffer[UART_STRING_MAX_LENGTH];
+
+	strncpy(printBuffer, string, UART_STRING_MAX_LENGTH);
+	return xQueueSendToBackFromISR(m_uartTxQueueHandle, printBuffer, 0);
+}
+
+
+void processUartTx(osMessageQueueId_t uartTxQueueHandle)
+{
+	char txBuffer[UART_STRING_MAX_LENGTH+1];
+	uint32_t i, length;
+
+	m_uartTxQueueHandle = uartTxQueueHandle;
 	for(;;)
 	{
-		osDelay(1000);
+		if(xQueueReceive(m_uartTxQueueHandle, txBuffer, portMAX_DELAY) == pdTRUE)
+		{
+			length = strnlen(txBuffer, UART_STRING_MAX_LENGTH);
+			txBuffer[length++] = '\n';
+			for(i=0; i<length; i++)
+			{
+				while (!LL_LPUART_IsActiveFlag_TXE(LPUART1));
+				LL_LPUART_TransmitData8(LPUART1, txBuffer[i]);
+			}
+		}
 	}
 }
 /***************************************** END UART TX ************************************************/
