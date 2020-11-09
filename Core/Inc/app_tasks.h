@@ -14,7 +14,7 @@
 
 
 
-void procUartRxISR(uint8_t rcvd_data);
+void procUartRxISR(uint8_t rcvdChar);
 
 
 void processUartRx();
