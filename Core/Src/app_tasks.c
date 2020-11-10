@@ -46,10 +46,9 @@ void procUartRxISR(uint8_t rcvdChar)
 		xBytesSent = xMessageBufferSendFromISR(uartRxMessageBuffer, buffer, nBuf, &xHigherPriorityTaskWoken);
 		if(xBytesSent != nBuf)
 			uartPrintFromISR("E: UART RX ISR message buffer overflowed");
-
-		//taskYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 		memset(buffer, 0, sizeof(buffer));	// TODO replace with a better way to uartPrint with null terminators
 		nBuf = 0;
+		portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
 	}
 	else if(nBuf != UART_INPUT_BUFFER_SIZE)
 	{
