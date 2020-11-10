@@ -16,6 +16,19 @@
 #define UART_INPUT_BUFFER_SIZE	32		// max number of characters that can be sent from the computer to the microcontroller
 
 
+typedef enum {FUNC_SINE, FUNC_RAMP, FUNC_SQR, FUNC_TRI} funcType;
+
+typedef struct {
+	funcType type;
+	uint32_t freq;
+} funcParams;
+
+
+
+
+
+
+
 BaseType_t uartPrint(char* string);
 BaseType_t uartPrintFromISR(char* string);
 

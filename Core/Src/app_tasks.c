@@ -10,7 +10,8 @@
 #include "message_buffer.h"
 #include <string.h>
 #include "queue.h"
-
+#include <stdlib.h>
+#include <stdio.h>
 
 
 /******************************************* UART RX **************************************************/
@@ -58,24 +59,52 @@ void procUartRxISR(uint8_t rcvdChar)
 }
 
 
+void decodeNewSignalParams(char* string, size_t length, funcParams *p_newParams)
+{
+	if(strnstr(string, "sine", length))	         p_newParams->type = FUNC_SINE;
+	else if(strnstr(string, "triangle", length)) p_newParams->type = FUNC_TRI;
+	else if(strnstr(string, "square", length))   p_newParams->type = FUNC_SQR;
+	else if(strnstr(string, "ramp", length))     p_newParams->type = FUNC_RAMP;
+	else if(strnstr(string, "help", length))
+	{
+		uartPrint("Format: <signal type> <frequency>");
+		uartPrint("<signal type>: sine, triangle, square, ramp");
+		uartPrint("<frequency>:   positive integer number from 1 to 2000000");
+		uartPrint("example:       \"sine 1000\" (1KHz sinusoidal)");
+		return;
+	}
+	else{
+		uartPrint("E: UART RX task, erroneous signal type");
+		return;
+	}
+
+	char str[40];
+	int number;
+	char* numPos = strnstr(string, " ", length);
+	number = atoi(numPos);
+	uartPrint("Number: ");
+	sprintf(str, "%i", number);
+	uartPrint(str);
+}
+
+
 void processUartRx()
 {
 	char uartRxTaskBuffer[UART_INPUT_BUFFER_SIZE] = {0};
+	size_t strLength;
+	funcParams newParams;
 
 	// Enable RXNE and Error interrupts
 	LL_LPUART_EnableIT_RXNE(LPUART1);
 	LL_LPUART_EnableIT_ERROR(LPUART1);
-
 	// Create message buffer
 	uartRxMessageBuffer = xMessageBufferCreateStatic(sizeof(uartRxStorageBuffer), uartRxStorageBuffer, &uartRxMessageBufferStruct);
 
 	for(;;)
 	{
-		if(xMessageBufferReceive(uartRxMessageBuffer, uartRxTaskBuffer, UART_INPUT_BUFFER_SIZE, portMAX_DELAY) != 0)
+		if((strLength = xMessageBufferReceive(uartRxMessageBuffer, uartRxTaskBuffer, UART_INPUT_BUFFER_SIZE, portMAX_DELAY)) != 0)
 		{
-			uartPrint("D: Received from UART RX message buffer:");
-			uartPrint(uartRxTaskBuffer);
-			memset(uartRxTaskBuffer, 0, sizeof(uartRxTaskBuffer));	// TODO replace with a better way to uartPrint with null terminators
+			decodeNewSignalParams(uartRxTaskBuffer, strLength, &newParams);
 		}
 	}
 }
