@@ -69,8 +69,8 @@ void decodeNewSignalParams(char* string, size_t length, funcParams *p_newParams)
 	{
 		uartPrint("Format: <signal type> <frequency>");
 		uartPrint("<signal type>: sine, triangle, square, ramp");
-		uartPrint("<frequency>:   positive integer number from 1 to 2000000");
-		uartPrint("example:       \"sine 1000\" (1KHz sinusoidal)");
+		uartPrint("<frequency>: positive integer number from 1 to 2000000");
+		uartPrint("example: \"sine 1000\" (1KHz sinusoidal)");
 		return;
 	}
 	else{
@@ -94,9 +94,9 @@ void processUartRx()
 	size_t strLength;
 	funcParams newParams;
 
-	// Enable RXNE and Error interrupts
+	/*// Enable RXNE and Error interrupts
 	LL_LPUART_EnableIT_RXNE(LPUART1);
-	LL_LPUART_EnableIT_ERROR(LPUART1);
+	LL_LPUART_EnableIT_ERROR(LPUART1);*/
 	// Create message buffer
 	uartRxMessageBuffer = xMessageBufferCreateStatic(sizeof(uartRxStorageBuffer), uartRxStorageBuffer, &uartRxMessageBufferStruct);
 
@@ -157,9 +157,30 @@ void processUartTx(osMessageQueueId_t uartTxQueueHandle)
 /***************************************** END UART TX ************************************************/
 
 
+/* Sine wave values for a complete symbol */
+uint16_t sinewave[60] = {
+0x07ff,0x08cb,0x0994,0x0a5a,0x0b18,0x0bce,0x0c79,0x0d18,0x0da8,0x0e29,0x0e98,0x0ef4,0x0f3e,0x0f72,0x0f92,0x0f9d,
+0x0f92,0x0f72,0x0f3e,0x0ef4,0x0e98,0x0e29,0x0da8,0x0d18,0x0c79,0x0bce,0x0b18,0x0a5a,0x0994,0x08cb,0x07ff,0x0733,
+0x066a,0x05a4,0x04e6,0x0430,0x0385,0x02e6,0x0256,0x01d5,0x0166,0x010a,0x00c0,0x008c,0x006c,0x0061,0x006c,0x008c,
+0x00c0,0x010a,0x0166,0x01d5,0x0256,0x02e6,0x0385,0x0430,0x04e6,0x05a4,0x066a,0x0733};
 
-void processNewSignal()
+void processNewSignal(TIM_HandleTypeDef *htim2, DAC_HandleTypeDef *hdac1)
 {
+    if (HAL_DAC_Start_DMA(hdac1, DAC_CHANNEL_1, (uint32_t *)sinewave, 60, DAC_ALIGN_12B_R) != HAL_OK)
+
+    {
+      /* DAC conversion start error */
+      Error_Handler();
+    }
+
+
+	/* Enable TIM peripheral counter */
+	if (HAL_TIM_Base_Start(htim2) != HAL_OK)
+	{
+		/* Counter enable error */
+		Error_Handler();
+	}
+
 	/* Infinite loop */
 	for(;;)
 	{

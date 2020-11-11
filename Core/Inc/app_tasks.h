@@ -35,7 +35,7 @@ BaseType_t uartPrintFromISR(char* string);
 void procUartRxISR(uint8_t rcvdChar);
 void processUartRx();
 void processUartTx(osMessageQueueId_t uartTxQueueHandle);
-void processNewSignal();
+void processNewSignal(TIM_HandleTypeDef *htim2, DAC_HandleTypeDef *hdac1);
 
 
 
