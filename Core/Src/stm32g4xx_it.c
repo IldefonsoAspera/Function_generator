@@ -23,7 +23,9 @@
 #include "stm32g4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "app_tasks.h"
+#include "app_funcGen.h"
+#include "app_uartTx.h"
+#include "app_uartRx.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -208,7 +210,8 @@ void EXTI15_10_IRQHandler(void)
 void LPUART1_IRQHandler(void)
 {
   /* USER CODE BEGIN LPUART1_IRQn 0 */
-	  if (LL_LPUART_IsActiveFlag_RXNE(LPUART1) && LL_LPUART_IsEnabledIT_RXNE(LPUART1))
+	  if (LL_LPUART_IsActiveFlag_RXNE_RXFNE(LPUART1)
+	  && LL_LPUART_IsEnabledIT_RXNE_RXFNE(LPUART1))
 	  {
 	    /* RXNE flag will be cleared by reading of RDR register (done in call) */
 	    /* Call function in charge of handling Character reception */

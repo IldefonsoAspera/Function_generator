@@ -24,7 +24,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
-#include "app_tasks.h"
+#include "app_funcGen.h"
+#include "app_uartTx.h"
+#include "app_uartRx.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

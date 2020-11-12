@@ -66,6 +66,7 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
+#define APP_CHECK_HAL(x)	if((x) != HAL_OK){Error_Handler();}
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
