@@ -28,7 +28,7 @@ static MessageBufferHandle_t uartRxMessageBuffer;
 // If the buffer is full, it will instead wait for a \n to restart again.
 void procUartRxISR(uint8_t rcvdChar)
 {
-	static char     buffer[UART_INPUT_BUFFER_SIZE] = {0};
+	static char     buffer[UART_INPUT_BUFFER_SIZE+1];
 	static uint32_t nBuf = 0;
 	size_t          xBytesSent;
 	BaseType_t      xHigherPriorityTaskWoken = pdFALSE;
@@ -40,13 +40,10 @@ void procUartRxISR(uint8_t rcvdChar)
 	}
 	else if(rcvdChar == '\n' && nBuf != 0)
 	{
-		uartPrintFromISR("D: Added string in ISR to msg buffer, received from UART:");
-		uartPrintFromISR(buffer);
-
+		buffer[nBuf++] = '\0';
 		xBytesSent = xMessageBufferSendFromISR(uartRxMessageBuffer, buffer, nBuf, &xHigherPriorityTaskWoken);
 		if(xBytesSent != nBuf)
 			uartPrintFromISR("E: UART RX ISR message buffer overflowed");
-		memset(buffer, 0, sizeof(buffer));	// TODO replace with a better way to uartPrint with null terminators
 		nBuf = 0;
 		portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
 	}
