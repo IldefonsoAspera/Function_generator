@@ -15,6 +15,8 @@
 
 
 void uartPrint(char* string);
+void uartTxISR_charSent_callback();
+
 void uartPrintFromISR(char* string);
 void processUartTx(osMessageQueueId_t uartTxQueueHandle);
 

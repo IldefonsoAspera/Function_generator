@@ -5,6 +5,7 @@
  *      Author: Ildefonso
  */
 
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -87,12 +88,10 @@ void processUartRx()
 	size_t strLength;
 	funcParams newParams;
 
-	// Enable RXNE and Error interrupts
-	LL_LPUART_EnableIT_RXNE(LPUART1);
-	LL_LPUART_EnableIT_ERROR(LPUART1);
 	// Create message buffer
 	uartRxMessageBuffer = xMessageBufferCreateStatic(sizeof(uartRxStorageBuffer), uartRxStorageBuffer, &uartRxMessageBufferStruct);
 
+	LL_LPUART_EnableIT_RXNE(LPUART1);
 	for(;;)
 	{
 		if((strLength = xMessageBufferReceive(uartRxMessageBuffer, uartRxTaskBuffer, UART_INPUT_BUFFER_SIZE, portMAX_DELAY)) != 0)

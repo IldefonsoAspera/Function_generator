@@ -210,17 +210,21 @@ void EXTI15_10_IRQHandler(void)
 void LPUART1_IRQHandler(void)
 {
   /* USER CODE BEGIN LPUART1_IRQn 0 */
-	  if (LL_LPUART_IsActiveFlag_RXNE_RXFNE(LPUART1)
-	  && LL_LPUART_IsEnabledIT_RXNE_RXFNE(LPUART1))
-	  {
-	    /* RXNE flag will be cleared by reading of RDR register (done in call) */
-	    /* Call function in charge of handling Character reception */
-		  procUartRxISR(LL_LPUART_ReceiveData8(LPUART1));
-	  }
-	  else
-	  {
-	    while(1);
-	  }
+
+	if (LL_LPUART_IsActiveFlag_RXNE_RXFNE(LPUART1)
+	&& LL_LPUART_IsEnabledIT_RXNE_RXFNE(LPUART1))
+	{
+		/* RXNE flag will be cleared by reading of RDR register (done in call) */
+		/* Call function in charge of handling Character reception */
+		procUartRxISR(LL_LPUART_ReceiveData8(LPUART1));
+	}
+
+	if (LL_LPUART_IsEnabledIT_TXE_TXFNF(LPUART1)
+	&& LL_LPUART_IsActiveFlag_TXE_TXFNF(LPUART1))
+	{
+		uartTxISR_charSent_callback();
+	}
+
 
   /* USER CODE END LPUART1_IRQn 0 */
   /* USER CODE BEGIN LPUART1_IRQn 1 */

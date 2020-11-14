@@ -11,6 +11,7 @@
 #include "app_funcGen.h"
 #include "app_uartRx.h"
 #include "app_uartTx.h"
+#include "app_log.h"
 
 static uint8_t               funcGenStorageBuffer[sizeof(funcParams) * 10];
 static StaticMessageBuffer_t funcGenMessageBufferStruct;
@@ -30,7 +31,7 @@ void addNewSignal(funcParams newParams)
 
 	xBytesSent = xMessageBufferSend(funcGenMessageBuffer, &newParams, sizeof(newParams), portMAX_DELAY);
 	if(xBytesSent != sizeof(newParams))
-		uartPrintFromISR("E: New pattern message buffer overflowed");
+		log_error("New pattern message buffer overflowed");
 }
 
 

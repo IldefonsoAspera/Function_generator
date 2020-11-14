@@ -5,55 +5,72 @@
  *      Author: Ildefonso
  */
 
-#include "cmsis_os.h"
-#include "app_uartTx.h"
-#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
+#include "cmsis_gcc.h"
 #include "main.h"
-#include "queue.h"
-#include "app_log.h"
 
-static osMessageQueueId_t m_uartTxQueueHandle;
 
-void uartPrint(char* string)
+// Buffer size must be a power of two to optimize operations
+#define FIFO_SIZE_EXP	10
+#define FIFO_SIZE		(1<<FIFO_SIZE_EXP)
+
+static char uartTxFifo[FIFO_SIZE];
+static int  rdOff = 0; 					// Last read item
+static int  wrOff = 0; 					// Next item to write
+static bool isTx  = false;
+
+
+static char fifo_get()
 {
-	char printBuffer[UART_STRING_MAX_LENGTH];
-
-	strncpy(printBuffer, string, UART_STRING_MAX_LENGTH);
-	xQueueSendToBack(m_uartTxQueueHandle, printBuffer, 0);
+	char retVal = '\0';
+	if(wrOff-rdOff != 0)
+		retVal = uartTxFifo[rdOff++ & (FIFO_SIZE-1)];
+	else
+		retVal = '\0';
+	return retVal;
 }
 
-// TODO fix case when passed string is smaller than max length and does not have a null terminator
-void uartPrintFromISR(char* string)
+
+// To be used to start TX and in ISR to continue transmission
+static void uartTx_sendNext()
 {
-	char printBuffer[UART_STRING_MAX_LENGTH];
-
-	strncpy(printBuffer, string, UART_STRING_MAX_LENGTH);
-	xQueueSendToBackFromISR(m_uartTxQueueHandle, printBuffer, 0);
-}
-
-
-void processUartTx(osMessageQueueId_t uartTxQueueHandle)
-{
-	char txBuffer[UART_STRING_MAX_LENGTH];
-	uint32_t i, length;
-
-	m_uartTxQueueHandle = uartTxQueueHandle;
-
-	log_debug("debug");
-	log_info("information");
-	log_notif("notification");
-	log_warn("warning");
-	log_error("error");
-	for(;;)
-	{
-		if(xQueueReceive(m_uartTxQueueHandle, txBuffer, portMAX_DELAY) == pdTRUE)
-		{
-			length = strnlen(txBuffer, UART_STRING_MAX_LENGTH);
-			for(i=0; i<length; i++)
-			{
-				while (!LL_LPUART_IsActiveFlag_TXE(LPUART1));
-				LL_LPUART_TransmitData8(LPUART1, txBuffer[i]);
-			}
-		}
+	char newChar = fifo_get();
+	if(newChar != '\0'){
+		LL_LPUART_TransmitData8(LPUART1, newChar);
+		isTx = true;
 	}
+	else{
+		LL_LPUART_DisableIT_TXE_TXFNF(USART1);
+		isTx = false;
+	}
+}
+
+
+static void fifo_put(char* str)
+{
+	while(wrOff-rdOff <= FIFO_SIZE && *str != '\0')
+		uartTxFifo[wrOff++ & (FIFO_SIZE-1)] = *str++;
+}
+
+
+void uartPrint(char* str)
+{
+	__disable_irq();
+	fifo_put(str);
+	if(!isTx)
+	{
+		uartTx_sendNext();
+		LL_LPUART_EnableIT_TXE_TXFNF(LPUART1);
+	}
+	__enable_irq();
+}
+
+
+void uartTxISR_charSent_callback()
+{
+	__disable_irq();
+	uartTx_sendNext();
+	__enable_irq();
 }

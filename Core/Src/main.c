@@ -149,6 +149,7 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   log_init(HAL_GetTick, uartPrint);
+  log_debug("Drivers initialized and program started");
 
   /* USER CODE END 2 */
 
@@ -524,7 +525,11 @@ void startUartRx(void *argument)
 void startUartTx(void *argument)
 {
   /* USER CODE BEGIN startUartTx */
-	processUartTx(uartTxQueueHandle);
+	/*processUartTx(uartTxQueueHandle);*/
+	while(1)
+	{
+		vTaskDelay(500);
+	}
   /* USER CODE END startUartTx */
 }
 
