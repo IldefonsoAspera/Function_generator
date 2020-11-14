@@ -14,6 +14,7 @@
 #include "app_uartRx.h"
 #include "app_uartTx.h"
 #include "app_funcGen.h"
+#include "app_log.h"
 
 static uint8_t               uartRxStorageBuffer[UART_INPUT_BUFFER_SIZE + 1];			// Message buffer for UART ISR
 static StaticMessageBuffer_t uartRxMessageBufferStruct;
@@ -33,24 +34,23 @@ void procUartRxISR(uint8_t rcvdChar)
 	size_t          xBytesSent;
 	BaseType_t      xHigherPriorityTaskWoken = pdFALSE;
 
-	if(rcvdChar == '\n' && nBuf == UART_INPUT_BUFFER_SIZE)
+	if((rcvdChar == '\n' || rcvdChar == '\r') && nBuf == UART_INPUT_BUFFER_SIZE)
 	{
-		uartPrintFromISR("E: Received string is too long");
+		log_error("Received string is too long");
 		nBuf = 0;
 	}
-	else if(rcvdChar == '\n' && nBuf != 0)
+	else if((rcvdChar == '\n' || rcvdChar == '\r') && nBuf != 0)
 	{
 		buffer[nBuf++] = '\0';
 		xBytesSent = xMessageBufferSendFromISR(uartRxMessageBuffer, buffer, nBuf, &xHigherPriorityTaskWoken);
 		if(xBytesSent != nBuf)
-			uartPrintFromISR("E: UART RX ISR message buffer overflowed");
+			log_error("UART RX ISR message buffer overflowed");
 		nBuf = 0;
 		portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
 	}
 	else if(nBuf != UART_INPUT_BUFFER_SIZE)
 	{
-		if(rcvdChar != '\r')
-			buffer[nBuf++] = rcvdChar;
+		buffer[nBuf++] = rcvdChar;
 	}
 }
 
@@ -70,7 +70,7 @@ static void decodeNewSignalParams(char* string, size_t length, funcParams *p_new
 		return;
 	}
 	else{
-		uartPrint("E: UART RX task, erroneous signal type");
+		log_error("UART RX task, erroneous signal type");
 		return;
 	}
 
