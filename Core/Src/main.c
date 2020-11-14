@@ -27,6 +27,7 @@
 #include "app_funcGen.h"
 #include "app_uartTx.h"
 #include "app_uartRx.h"
+#include "app_log.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -147,7 +148,7 @@ int main(void)
   MX_DAC1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-
+  log_init(HAL_GetTick, NULL);
   /* USER CODE END 2 */
 
   /* Init scheduler */
