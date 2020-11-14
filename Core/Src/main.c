@@ -31,7 +31,6 @@
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
-typedef StaticQueue_t osStaticMessageQDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -65,30 +64,12 @@ const osThreadAttr_t taskUartRx_attributes = {
   .priority = (osPriority_t) osPriorityHigh,
   .stack_size = 128 * 4
 };
-/* Definitions for taskUartTx */
-osThreadId_t taskUartTxHandle;
-const osThreadAttr_t taskUartTx_attributes = {
-  .name = "taskUartTx",
-  .priority = (osPriority_t) osPriorityAboveNormal,
-  .stack_size = 128 * 4
-};
 /* Definitions for taskFuncGen */
 osThreadId_t taskFuncGenHandle;
 const osThreadAttr_t taskFuncGen_attributes = {
   .name = "taskFuncGen",
   .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 128 * 4
-};
-/* Definitions for uartTxQueue */
-osMessageQueueId_t uartTxQueueHandle;
-uint8_t uartTxQueueBuffer[ 10 * 128 ];
-osStaticMessageQDef_t uartTxQueueControlBlock;
-const osMessageQueueAttr_t uartTxQueue_attributes = {
-  .name = "uartTxQueue",
-  .cb_mem = &uartTxQueueControlBlock,
-  .cb_size = sizeof(uartTxQueueControlBlock),
-  .mq_mem = &uartTxQueueBuffer,
-  .mq_size = sizeof(uartTxQueueBuffer)
 };
 /* USER CODE BEGIN PV */
 
@@ -103,7 +84,6 @@ static void MX_DAC1_Init(void);
 static void MX_TIM2_Init(void);
 void StartDefaultTask(void *argument);
 void startUartRx(void *argument);
-void startUartTx(void *argument);
 void startFuncGen(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -168,10 +148,6 @@ int main(void)
 	/* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
-  /* Create the queue(s) */
-  /* creation of uartTxQueue */
-  uartTxQueueHandle = osMessageQueueNew (10, 128, &uartTxQueue_attributes);
-
   /* USER CODE BEGIN RTOS_QUEUES */
 	/* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -182,9 +158,6 @@ int main(void)
 
   /* creation of taskUartRx */
   taskUartRxHandle = osThreadNew(startUartRx, NULL, &taskUartRx_attributes);
-
-  /* creation of taskUartTx */
-  taskUartTxHandle = osThreadNew(startUartTx, NULL, &taskUartTx_attributes);
 
   /* creation of taskFuncGen */
   taskFuncGenHandle = osThreadNew(startFuncGen, NULL, &taskFuncGen_attributes);
@@ -513,24 +486,6 @@ void startUartRx(void *argument)
   /* USER CODE BEGIN startUartRx */
 	processUartRx();
   /* USER CODE END startUartRx */
-}
-
-/* USER CODE BEGIN Header_startUartTx */
-/**
- * @brief Function implementing the taskUartTx thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_startUartTx */
-void startUartTx(void *argument)
-{
-  /* USER CODE BEGIN startUartTx */
-	/*processUartTx(uartTxQueueHandle);*/
-	while(1)
-	{
-		vTaskDelay(500);
-	}
-  /* USER CODE END startUartTx */
 }
 
 /* USER CODE BEGIN Header_startFuncGen */
