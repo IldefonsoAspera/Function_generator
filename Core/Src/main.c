@@ -148,7 +148,8 @@ int main(void)
   MX_DAC1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  log_init(HAL_GetTick, NULL);
+  log_init(HAL_GetTick, uartPrint);
+
   /* USER CODE END 2 */
 
   /* Init scheduler */

@@ -14,8 +14,8 @@
 #define UART_STRING_MAX_LENGTH	128		// Max number of characters that can be sent to the computer per print (Buffers size)
 
 
-BaseType_t uartPrint(char* string);
-BaseType_t uartPrintFromISR(char* string);
+void uartPrint(char* string);
+void uartPrintFromISR(char* string);
 void processUartTx(osMessageQueueId_t uartTxQueueHandle);
 
 #endif /* INC_APP_UARTTX_H_ */
