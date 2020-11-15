@@ -62,14 +62,14 @@ osThreadId_t taskUartRxHandle;
 const osThreadAttr_t taskUartRx_attributes = {
   .name = "taskUartRx",
   .priority = (osPriority_t) osPriorityHigh,
-  .stack_size = 128 * 4
+  .stack_size = 256 * 4
 };
 /* Definitions for taskFuncGen */
 osThreadId_t taskFuncGenHandle;
 const osThreadAttr_t taskFuncGen_attributes = {
   .name = "taskFuncGen",
   .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
+  .stack_size = 256 * 4
 };
 /* USER CODE BEGIN PV */
 

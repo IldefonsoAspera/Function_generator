@@ -45,6 +45,7 @@ void processNewSignal(TIM_HandleTypeDef *htim2, DAC_HandleTypeDef *hdac1)
 	// Create message buffer
 	funcGenMessageBuffer = xMessageBufferCreateStatic(sizeof(funcGenStorageBuffer), funcGenStorageBuffer, &funcGenMessageBufferStruct);
 
+	log_debug("Started function generator task");
 	for(;;)
 	{
 		if(xMessageBufferReceive(funcGenMessageBuffer, &newParams, sizeof(newParams), portMAX_DELAY) != 0)

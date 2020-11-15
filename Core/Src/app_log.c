@@ -38,7 +38,7 @@ void log_log(enum log_lvl lvl, const char* fmt, ...)
 			uint32_t m = (ms%3600000)/60000;
 			uint32_t s = (ms%60000)/1000;
 			ms = ms%1000;
-			snprintf(m_buffer, sizeof(m_buffer), "\x1b[0m%02lu:%02lu:%02lu.%03lu ", h, m, s, ms);
+			snprintf(m_buffer, sizeof(m_buffer), "%02lu:%02lu:%02lu.%03lu ", h, m, s, ms);
 		}
 #endif
 #if(LOG_USE_ANSI_COLORS)
@@ -49,10 +49,10 @@ void log_log(enum log_lvl lvl, const char* fmt, ...)
 
 		va_list va;
 		va_start(va, fmt);
-		vsnprintf(strchr(m_buffer, '\0'), LOG_INTERNAL_BUFFER - strlen(m_buffer) - 3, fmt, va);	// Account for null terminator and \r\n
+		vsnprintf(strchr(m_buffer, '\0'), LOG_INTERNAL_BUFFER - strlen(m_buffer) - 7, fmt, va);	// Account for elements
 		va_end(va);
 
-		strcat(m_buffer, "\r\n");
+		strcat(m_buffer, "\x1b[0m\r\n");
 		m_out_callback(m_buffer);
 	}
 }

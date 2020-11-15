@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include "cmsis_os.h"
 #include "message_buffer.h"
 #include "main.h"
@@ -37,11 +38,12 @@ void procUartRxISR(uint8_t rcvdChar)
 
 	if((rcvdChar == '\n' || rcvdChar == '\r') && nBuf == UART_INPUT_BUFFER_SIZE)
 	{
-		log_error("Received string is too long");
+		log_warn("Received string is too long");
 		nBuf = 0;
 	}
 	else if((rcvdChar == '\n' || rcvdChar == '\r') && nBuf != 0)
 	{
+		log_debug("UART RX ISR received message");
 		buffer[nBuf++] = '\0';
 		xBytesSent = xMessageBufferSendFromISR(uartRxMessageBuffer, buffer, nBuf, &xHigherPriorityTaskWoken);
 		if(xBytesSent != nBuf)
@@ -56,7 +58,8 @@ void procUartRxISR(uint8_t rcvdChar)
 }
 
 
-static void decodeNewSignalParams(char* string, size_t length, funcParams *p_newParams)
+// Returns true if a new waveform need to be created
+static bool decodeNewSignalParams(char* string, size_t length, funcParams *p_newParams)
 {
 	if(strnstr(string, "sine", length))	         p_newParams->type = FUNC_SINE;
 	else if(strnstr(string, "triangle", length)) p_newParams->type = FUNC_TRI;
@@ -64,21 +67,21 @@ static void decodeNewSignalParams(char* string, size_t length, funcParams *p_new
 	else if(strnstr(string, "ramp", length))     p_newParams->type = FUNC_RAMP;
 	else if(strnstr(string, "help", length))
 	{
-		uartPrint("Format: <signal type> <frequency>");
-		uartPrint("<signal type>: sine, triangle, square, ramp");
-		uartPrint("<frequency>: positive integer number from 1 to 2000000");
-		uartPrint("example: \"sine 1000\" (1KHz sinusoidal)");
-		return;
+		uartPrint("Format: <signal type> <frequency>\r\n");
+		uartPrint("<signal type>: sine, triangle, square, ramp\r\n");
+		uartPrint("<frequency>: positive integer number from 1 to 2000000\r\n");
+		uartPrint("example: \"sine 1000\" (1KHz sinusoidal)\r\n");
+		return false;
 	}
 	else{
-		log_error("UART RX task, erroneous signal type");
-		return;
+		log_warn("UART RX task, erroneous signal type");
+		return false;
 	}
-
 
 	char* numPos = strnstr(string, " ", length);
 	int number   = atoi(numPos);
 	p_newParams->freq = number;
+	return true;
 }
 
 
@@ -90,14 +93,15 @@ void processUartRx()
 
 	// Create message buffer
 	uartRxMessageBuffer = xMessageBufferCreateStatic(sizeof(uartRxStorageBuffer), uartRxStorageBuffer, &uartRxMessageBufferStruct);
-
 	LL_LPUART_EnableIT_RXNE(LPUART1);
+
+	log_debug("Started uartRX task");
 	for(;;)
 	{
 		if((strLength = xMessageBufferReceive(uartRxMessageBuffer, uartRxTaskBuffer, UART_INPUT_BUFFER_SIZE, portMAX_DELAY)) != 0)
 		{
-			decodeNewSignalParams(uartRxTaskBuffer, strLength, &newParams);
-			addNewSignal(newParams);
+			if(decodeNewSignalParams(uartRxTaskBuffer, strLength, &newParams))
+				addNewSignal(newParams);
 		}
 	}
 }
