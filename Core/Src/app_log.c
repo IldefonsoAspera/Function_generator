@@ -65,8 +65,7 @@ void log_string(enum log_lvl lvl, const char* fmt)
 		m_buffer[0] = '\0';
 		print_header(lvl, m_buffer);
 
-		int currentLength = strlen(m_buffer);
-		strncat(m_buffer, fmt, LOG_INTERNAL_BUFFER - currentLength - endingElems);
+		strncat(m_buffer, fmt, LOG_INTERNAL_BUFFER - strlen(m_buffer) - endingElems);
 #if LOG_USE_ANSI_COLORS
 		strcat(m_buffer, LOG_DEFAULT_COLOR);
 #endif
