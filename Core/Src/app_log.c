@@ -27,10 +27,10 @@ void log_log(enum log_lvl lvl, const char* fmt, ...)
 {
 	static char m_buffer[LOG_INTERNAL_BUFFER];
 
-#if(LOG_USE_RUNTIME)
 	if(m_out_callback != NULL && lvl >= LOG_LEVEL_THRESHOLD)
 	{
 		m_buffer[0] = '\0';
+#if(LOG_USE_RUNTIME)
 		if(m_time_callback != NULL)
 		{
 			uint32_t ms = m_time_callback();
