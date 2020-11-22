@@ -32,6 +32,8 @@ void addNewSignal(funcParams newParams)
 	xBytesSent = xMessageBufferSend(funcGenMessageBuffer, &newParams, sizeof(newParams), portMAX_DELAY);
 	if(xBytesSent != sizeof(newParams))
 		log_error("New pattern message buffer overflowed");
+	else
+		log_debug("New pattern added to message buffer");
 }
 
 
@@ -46,18 +48,16 @@ void processNewSignal(TIM_HandleTypeDef *htim2, DAC_HandleTypeDef *hdac1)
 	funcGenMessageBuffer = xMessageBufferCreateStatic(sizeof(funcGenStorageBuffer), funcGenStorageBuffer, &funcGenMessageBufferStruct);
 
 	log_debug("Started function generator task");
+
 	for(;;)
 	{
 		if(xMessageBufferReceive(funcGenMessageBuffer, &newParams, sizeof(newParams), portMAX_DELAY) != 0)
 		{
+			log_debug("New function, freq: %i", newParams.freq);
 			APP_CHECK_HAL (HAL_TIM_Base_Stop(htim2));
 			htim2->Init.Period = 160000000UL / ((uint64_t)newParams.freq*60);
 			APP_CHECK_HAL (HAL_TIM_Base_Init(htim2));
 			APP_CHECK_HAL (HAL_TIM_Base_Start(htim2));
-
-			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-			osDelay(500);
-			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 		}
 
 	}

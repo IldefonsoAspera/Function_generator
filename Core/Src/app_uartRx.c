@@ -62,9 +62,6 @@ void procUartRxISR(uint8_t rcvdChar)
 static bool decodeNewSignalParams(char* string, size_t length, funcParams *p_newParams)
 {
 	if(strnstr(string, "sine", length))	         p_newParams->type = FUNC_SINE;
-	else if(strnstr(string, "triangle", length)) p_newParams->type = FUNC_TRI;
-	else if(strnstr(string, "square", length))   p_newParams->type = FUNC_SQR;
-	else if(strnstr(string, "ramp", length))     p_newParams->type = FUNC_RAMP;
 	else if(strnstr(string, "help", length))
 	{
 		uartPrint("Format: <signal type> <frequency>\r\n");
@@ -100,6 +97,7 @@ void processUartRx()
 	{
 		if((strLength = xMessageBufferReceive(uartRxMessageBuffer, uartRxTaskBuffer, UART_INPUT_BUFFER_SIZE, portMAX_DELAY)) != 0)
 		{
+			log_debug("Received item from UART RX ISR");
 			if(decodeNewSignalParams(uartRxTaskBuffer, strLength, &newParams))
 				addNewSignal(newParams);
 		}

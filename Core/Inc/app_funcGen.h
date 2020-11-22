@@ -9,7 +9,7 @@
 #define INC_APP_FUNCGEN_H_
 
 
-typedef enum {FUNC_SINE, FUNC_RAMP, FUNC_SQR, FUNC_TRI} funcType;
+typedef enum {FUNC_SINE} funcType;
 
 typedef struct {
 	funcType type;
