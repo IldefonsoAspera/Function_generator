@@ -53,7 +53,6 @@ void processNewSignal(TIM_HandleTypeDef *htim2, DAC_HandleTypeDef *hdac1)
 	{
 		if(xMessageBufferReceive(funcGenMessageBuffer, &newParams, sizeof(newParams), portMAX_DELAY) != 0)
 		{
-			log_debug("New function, freq: %i", newParams.freq);
 			APP_CHECK_HAL (HAL_TIM_Base_Stop(htim2));
 			htim2->Init.Period = 160000000UL / ((uint64_t)newParams.freq*60);
 			APP_CHECK_HAL (HAL_TIM_Base_Init(htim2));
