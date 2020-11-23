@@ -31,7 +31,9 @@ typedef void (*log_out_callback)(char* str);	// Callback that will print the for
 #define log_warn(...)  _LOG_GET_MACRO(__VA_ARGS__, log_log, log_log, log_log, log_log, log_log, log_string)(LOG_LVL_WARNING, __VA_ARGS__)
 #define log_error(...) _LOG_GET_MACRO(__VA_ARGS__, log_log, log_log, log_log, log_log, log_log, log_string)(LOG_LVL_ERROR, __VA_ARGS__)
 
-void log_string(enum log_lvl lvl, const char* fmt);
+#define log_string(lvl, fmt)	log_logstr(lvl, fmt, sizeof(fmt)-1)
+
+void log_logstr(enum log_lvl lvl, const char* fmt, size_t fmtlen);
 void log_log(enum log_lvl lvl, const char* fmt, ...);
 void log_init(log_time_callback time_callback, log_out_callback out_callback);
 
